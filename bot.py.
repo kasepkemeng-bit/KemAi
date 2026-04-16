@@ -1,0 +1,55 @@
+import telebot
+from yt_dlp import YoutubeDL
+import os
+
+TOKEN = '8283131103:AAGCpt9Q7DsLoYmmks1ulpOxqJk0VZEBvbE'
+bot = telebot.TeleBot(TOKEN)
+
+@bot.message_handler(commands=['start'])
+def welcome(message):
+    pesan = (
+        "Hi, terimakasih sudah menggunakan KemAI!\n\n"
+        "Sekarang fitur sudah di-update:\n"
+        "✅ Support Link YouTube\n"
+        "✅ Support Link TikTok\n\n"
+        "Dibuat oleh programmer Kemeng (tahap perkembangan). "
+        "Silahkan kirim link yang ingin kamu download (:"
+    )
+    bot.reply_to(message, pesan)
+
+@bot.message_handler(func=lambda message: True)
+def process_link(message):
+    url = message.text
+    
+    # Cek apakah link YouTube atau TikTok
+    if any(site in url for site in ["youtube.com", "youtu.be", "tiktok.com"]):
+        bot.reply_to(message, "Siap! KemAI lagi proses download videonya, tunggu sebentar ya...")
+        
+        try:
+            # Settingan universal buat YouTube & TikTok
+            opts = {
+                'format': 'best',
+                'outtmpl': 'video_kemai.mp4',
+                'quiet': True,
+                'no_warnings': True,
+                # Tambahan buat TikTok supaya gak gampang diblokir
+                'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+            }
+            
+            with YoutubeDL(opts) as ydl:
+                ydl.download([url])
+            
+            # Kirim videonya
+            with open('video_kemai.mp4', 'rb') as v:
+                bot.send_video(message.chat.id, v)
+            
+            # Hapus file sementara
+            os.remove('video_kemai.mp4')
+            
+        except Exception as e:
+            bot.reply_to(message, f"Aduh, KemAI gagal download: {str(e)}")
+    else:
+        bot.reply_to(message, "Maaf, link yang kamu kirim belum didukung sama KemAI (:")
+
+print("Bot KemAI v2 (YT & TikTok) sudah nyala...")
+bot.polling()
